@@ -1,2 +1,48 @@
 # goerr
-An attempt to bring the proposed error handling in Go v2 into Go v1. https://go.googlesource.com/proposal/+/master/design/go2draft.md
+
+[![GoLang](https://img.shields.io/badge/golang-%3E%3D%201.12.5-lightblue.svg)](https://golang.org)
+[![GoDoc](https://godoc.org/github.com/brad-jones/goerr?status.svg)](https://godoc.org/github.com/brad-jones/goerr)
+
+This package attempts to bring proposed error handling in Go v2 into Go v1.
+see: <https://go.googlesource.com/proposal/+/master/design/go2draft.md>
+
+## Usage
+
+```
+go get -u github.com/brad-jones/goerr
+```
+
+```go
+package copy
+
+import (
+    "os"
+    "fmt"
+    "io"
+
+    . "github.com/brad-jones/goerr"
+    "github.com/go-errors/errors"
+)
+
+
+func File(src, dst string) (err error) {
+    defer Handle(func(e error){
+        err = errors.Errorf("copy %s %s: %v", src, dst, e)
+    })
+
+    r, err := os.Open(src); Check(err)
+    defer r.Close()
+
+    w, err := os.Create(dst); Check(err)
+    defer Handle(func(e error){
+        w.Close()
+        os.Remove(dst)
+        panic(e)
+    })
+
+    _, err = io.Copy(w, r); Check(err)
+    Check(w.Close())
+
+    return nil
+}
+```
