@@ -114,7 +114,7 @@ need to recover.
 Other Thoughts re Panicking
 
 I am sure the performance of panic, defer & recover is slower than just
-checking and returning an error value. Unless I am writting some super duper
+checking and returning an error value. Unless I am writing some super duper
 performance oriented thing I doubt I'll notice any impacts.
 
 Panicking across goroutines, yep I get it, it does not work.
