@@ -25,7 +25,7 @@ func New(logger log.Logger) *Goerr {
 // Check will panic if err is not null
 func (g *Goerr) Check(err error) {
 	if err != nil {
-		panic(err)
+		panic(errors2.Wrap(err, 1))
 	}
 }
 
