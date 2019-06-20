@@ -1,7 +1,7 @@
 # goerr
 
 [![GoReport](https://goreportcard.com/badge/brad-jones/goerr)](https://goreportcard.com/report/brad-jones/goerr)
-[![GoLang](https://img.shields.io/badge/golang-%3E%3D%201.12.5-lightblue.svg)](https://golang.org)
+[![GoLang](https://img.shields.io/badge/golang-%3E%3D%201.12.6-lightblue.svg)](https://golang.org)
 [![GoDoc](https://godoc.org/github.com/brad-jones/goerr?status.svg)](https://godoc.org/github.com/brad-jones/goerr)
 [![License](https://img.shields.io/github/license/brad-jones/goerr.svg)](https://github.com/brad-jones/goerr/blob/master/LICENSE)
 
