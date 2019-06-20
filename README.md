@@ -10,9 +10,7 @@ see: <https://go.googlesource.com/proposal/+/master/design/go2draft.md>
 
 ## Usage
 
-```
-go get -u github.com/brad-jones/goerr
-```
+`go get -u github.com/brad-jones/goerr`
 
 ```go
 package copy

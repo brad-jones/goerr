@@ -3,10 +3,10 @@ Package goerr attempts to bring proposed error handling in Go v2 into Go v1.
 
 see: https://go.googlesource.com/proposal/+/master/design/go2draft.md
 
-While some of my idea's presented here may not be academically perfect I am
-taking a pragmatic approach to my development. But also on the other hand I
-have come to realise that golang is it's own language and not another...
-yes go is verbose suck it up and move on.
+Preface: My ideas presented here may not necessarily be theoretically perfect
+but I am taking a pragmatic approach to my development of golang code, while at
+the same time keeping in mind that go is go and not another language... go is
+verbose suck it up and move on.
 
 Check and Handle
 
@@ -120,6 +120,8 @@ performance oriented thing I doubt I'll notice any impacts.
 Panicking across goroutines, yep I get it, it does not work.
 I am totally fine with this. There are packages like
 https://godoc.org/golang.org/x/sync/errgroup to handle such cases.
+
+Also now: https://godoc.org/github.com/brad-jones/goasync
 
 Recover doesn't always work https://go101.org/article/panic-and-recover-more.html
 This nearly made me drop this entire project but I am going to persevere and
