@@ -1,6 +1,7 @@
 package goerr
 
 import (
+	"errors"
 	"fmt"
 
 	errors2 "github.com/go-errors/errors"
@@ -25,7 +26,7 @@ func New(logger log.Logger) *Goerr {
 // Check will panic if err is not null
 func (g *Goerr) Check(err error) {
 	if err != nil {
-		panic(errors2.Wrap(err, 1))
+		panic(g.Wrap(err))
 	}
 }
 
@@ -77,6 +78,14 @@ func (g *Goerr) HandleAndLogWithTrace(onError func(err error)) {
 		}
 		onError(err)
 	}
+}
+
+// Wrap is just an alias for the "github.com/go-errors/errors" Wrap method.
+// This just saves from having to directly depend on multiple error handling
+// packages. We prefer this library over "github.com/pkg/errors" because it
+// prints better stack traces.
+func (g *Goerr) Wrap(err error) error {
+	return errors2.Wrap(err, 3)
 }
 
 // Unwrap takes an error value and assumes it is either a https://github.com/go-errors/errors

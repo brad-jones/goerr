@@ -13,7 +13,7 @@ var defaultInstance = New(defaultLogger)
 // It does the same thing as `goerr.New(logger).Check()`.
 func Check(err error) {
 	if err != nil {
-		panic(err)
+		panic(Wrap(err))
 	}
 }
 
@@ -59,6 +59,12 @@ func HandleAndLogWithTrace(onError func(err error)) {
 		}
 		onError(err)
 	}
+}
+
+// Wrap uses the `defaultInstance` with a preconfigured logger.
+// It does the same thing as `goerr.New(logger).Wrap()`.
+func Wrap(err error) error {
+	return defaultInstance.Wrap(err)
 }
 
 // Unwrap uses the `defaultInstance` with a preconfigured logger.
