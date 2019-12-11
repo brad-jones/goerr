@@ -101,9 +101,15 @@ func (g *Goerr) Unwrap(err error) (error, error) {
 	type causer interface {
 		Cause() error
 	}
+	unwrapStdLib := func(err error) error {
+		if v := errors.Unwrap(err); v != nil {
+			return v
+		}
+		return err
+	}
 	switch v := err.(type) {
 	case causer:
-		return v.Cause(), nil
+		return unwrapStdLib(v.Cause()), nil
 	case *errors2.Error:
 		unWrapped := v.Err
 		for {
@@ -113,7 +119,10 @@ func (g *Goerr) Unwrap(err error) (error, error) {
 				break
 			}
 		}
-		return unWrapped, nil
+		return unwrapStdLib(unWrapped), nil
+	}
+	if e := unwrapStdLib(err); e != nil {
+		return e, nil
 	}
 	return nil, errors2.New(&ErrUnwrappingNotSupported{
 		OriginalError: err,
