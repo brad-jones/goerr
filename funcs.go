@@ -56,6 +56,8 @@ func HandleAndLogWithTrace(onError func(err error)) {
 		defaultLogger.Logf("%v\n", err.Error())
 		if st, err := Trace(err); err == nil {
 			defaultLogger.Logf("%v\n", st)
+		} else {
+			defaultLogger.Logf("%v\n", err)
 		}
 		onError(err)
 	}
