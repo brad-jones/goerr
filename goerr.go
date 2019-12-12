@@ -80,12 +80,19 @@ func (g *Goerr) HandleAndLogWithTrace(onError func(err error)) {
 	}
 }
 
-// Wrap is just an alias for the "github.com/go-errors/errors" Wrap method.
-// This just saves from having to directly depend on multiple error handling
-// packages. We prefer this library over "github.com/pkg/errors" because it
-// prints better stack traces.
+// Errorf is just an alias to "github.com/go-errors/errors".
+func (g *Goerr) Errorf(format string, a ...interface{}) error {
+	return errors2.Errorf(format, a...)
+}
+
+// WrapPrefix is just an alias to "github.com/go-errors/errors".
+func (g *Goerr) WrapPrefix(err error, prefix string) error {
+	return errors2.WrapPrefix(err, prefix, 1)
+}
+
+// Wrap is just an alias to "github.com/go-errors/errors".
 func (g *Goerr) Wrap(err error) error {
-	return errors2.Wrap(err, 3)
+	return errors2.Wrap(err, 1)
 }
 
 // Unwrap takes an error value and assumes it is either a https://github.com/go-errors/errors

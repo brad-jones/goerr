@@ -63,6 +63,18 @@ func HandleAndLogWithTrace(onError func(err error)) {
 	}
 }
 
+// Errorf uses the `defaultInstance` with a preconfigured logger.
+// It does the same thing as `goerr.New(logger).Errorf()`.
+func Errorf(format string, a ...interface{}) error {
+	return defaultInstance.Errorf(format, a...)
+}
+
+// WrapPrefix uses the `defaultInstance` with a preconfigured logger.
+// It does the same thing as `goerr.New(logger).WrapPrefix()`.
+func WrapPrefix(err error, prefix string) error {
+	return defaultInstance.WrapPrefix(err, prefix)
+}
+
 // Wrap uses the `defaultInstance` with a preconfigured logger.
 // It does the same thing as `goerr.New(logger).Wrap()`.
 func Wrap(err error) error {
