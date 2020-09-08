@@ -1,8 +1,8 @@
 # goerr
 
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/brad-jones/goerr/v2)](https://pkg.go.dev/github.com/brad-jones/goerr/v2)
 [![GoReport](https://goreportcard.com/badge/github.com/brad-jones/goerr/v2)](https://goreportcard.com/report/github.com/brad-jones/goerr/v2)
 [![GoLang](https://img.shields.io/badge/golang-%3E%3D%201.15.1-lightblue.svg)](https://golang.org)
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/brad-jones/goerr/v2)](https://pkg.go.dev/github.com/brad-jones/goerr/v2)
 [![License](https://img.shields.io/github/license/brad-jones/goerr.svg)](https://github.com/brad-jones/goerr/blob/v2/LICENSE)
 
 Package goerr adds additional error handling capabilities to go.
@@ -53,12 +53,25 @@ func main() {
 		goerr.PrintTrace(err)
 	}
 }
-
 ```
 
-## Documentation
+Running the above will output something similar to:
 
-<https://pkg.go.dev/github.com/brad-jones/goerr/v2>
+```
+crash3 received 1234567810: expecting 123456789
 
-Also see further working examples under:
-<https://github.com/brad-jones/goerr/v2/tree/master/examples>
+main.crash3:C:/Users/brad.jones/Projects/Personal/goerr/examples/simple/main.go:32
+	return goerr.Trace(errFoo, "crash3 received "+abc)
+main.crash2:C:/Users/brad.jones/Projects/Personal/goerr/examples/simple/main.go:21
+	if err := crash3(abc + "7810"); err != nil {
+main.crash1:C:/Users/brad.jones/Projects/Personal/goerr/examples/simple/main.go:12
+	if err := crash2(abc + "456"); err != nil {
+main.main:C:/Users/brad.jones/Projects/Personal/goerr/examples/simple/main.go:38
+	if err := crash1("123"); err != nil {
+runtime.main:C:/Users/brad.jones/scoop/apps/go/current/src/runtime/proc.go:204
+	fn()
+runtime.goexit:C:/Users/brad.jones/scoop/apps/go/current/src/runtime/asm_amd64.s:1374
+	BYTE    $0x90   // NOP
+```
+
+_Also see further working examples under: <https://github.com/brad-jones/goerr/tree/v2/examples>_
