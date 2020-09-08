@@ -43,7 +43,7 @@ We can use Trace like this:
 	func crash1(abc string) error {
 		if err := crash2(abc + "456"); err != nil {
 			// Use Trace anywhere you would normally return an error
-			// This will both store stackframe infomation and wrap the error
+			// This will both store stackframe information and wrap the error
 			return goerr.Trace(err)
 		}
 		return nil
