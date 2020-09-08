@@ -2,7 +2,7 @@
 
 [![GoReport](https://goreportcard.com/badge/github.com/brad-jones/goerr/v2)](https://goreportcard.com/report/github.com/brad-jones/goerr/v2)
 [![GoLang](https://img.shields.io/badge/golang-%3E%3D%201.15.1-lightblue.svg)](https://golang.org)
-[![GoDoc](https://godoc.org/github.com/brad-jones/goerr/v2?status.svg)](https://godoc.org/github.com/brad-jones/goerr/v2)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/brad-jones/goerr/v2)](https://pkg.go.dev/github.com/brad-jones/goerr/v2)
 [![License](https://img.shields.io/github/license/brad-jones/goerr.svg)](https://github.com/brad-jones/goerr/blob/v2/LICENSE)
 
 Package goerr adds additional error handling capabilities to go.
