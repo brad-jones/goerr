@@ -3,30 +3,79 @@ package goerr
 import (
 	"errors"
 	"fmt"
-
-	errors2 "github.com/go-errors/errors"
-	"github.com/go-log/log"
-	errors1 "github.com/pkg/errors"
+	"os"
+	"runtime"
+	"strings"
 )
 
-// Goerr is a class like object, create new instances with `goerr.New()`
-type Goerr struct {
-	logger log.Logger
+// PrintTrace will print the stack trace for the given error to STDERR.
+//
+// Included will be the error message, if the error is of type *goerr.Error then
+// a stack trace will be generated and finally if the cause of the error can be
+// marshalled into JSON it's values will be output as well.
+//
+// For example:
+//  human friendly error message
+//
+//  {
+//  	"optional": "context values"
+//  }
+//
+//  the-pkg-name.theMethodName:/the/file/path/to/go/src/file:123
+//  	if /the/file/path/to/go/src/file exists then this will be line 123
+func PrintTrace(err error) {
+	fmt.Fprint(os.Stderr, NewStackTrace(err).String())
 }
 
-// New creates new instances of `Goerr`.
+// Trace will take any value, convert it into an Error object,
+// if not already one and then save the stack trace information.
 //
-// The logger must implement the interface from https://github.com/go-log/log
-func New(logger log.Logger) *Goerr {
-	return &Goerr{
-		logger: logger,
+// It also accepts a variadic number of messages that will be
+// prefixed to the error text it's self to provide additional
+// context if required. These messages should be human friendly.
+func Trace(value interface{}, messages ...string) *Error {
+	return trace(1, value, messages...)
+}
+
+func trace(skip int, value interface{}, messages ...string) *Error {
+	err, ok := value.(*Error)
+	if !ok {
+		err = New(value)
+	} else {
+		if err.callers == nil {
+			err = &Error{innerErr: err}
+		}
+	}
+
+	caller := skip + 1
+	callers := []uintptr{}
+	for {
+		pc, _, _, ok := runtime.Caller(caller)
+		if !ok {
+			break
+		}
+		callers = append(callers, pc)
+		caller++
+	}
+
+	if err.callers == nil {
+		err.callers = callers
+	}
+
+	return &Error{
+		innerErr: err,
+		callers:  callers[1:],
+		message:  strings.Join(messages, ": "),
 	}
 }
 
-// Check will panic if err is not null
-func (g *Goerr) Check(err error) {
+// Check will panic if err is not nill.
+// It does the same tracing as the Trace function.
+//
+// YMMV - It mimics the goV2 check/handle proposal: https://bit.ly/354fRXv
+func Check(err error, messages ...string) {
 	if err != nil {
-		panic(g.Wrap(err))
+		panic(trace(1, err, messages...))
 	}
 }
 
@@ -35,141 +84,111 @@ func (g *Goerr) Check(err error) {
 //
 // Goes without saying but for this to be useful
 // you must preface it with `defer`.
-func (g *Goerr) Handle(onError func(err error)) {
-	if r := recover(); r != nil {
-		var ok bool
-		err, ok := r.(error)
-		if !ok {
-			err = fmt.Errorf("%v", r)
-		}
-		onError(err)
-	}
-}
-
-// HandleAndLog does the same thing as Handle but also logs (using the provided
-// logger) the error message.
-func (g *Goerr) HandleAndLog(onError func(err error)) {
-	if r := recover(); r != nil {
-		var ok bool
-		err, ok := r.(error)
-		if !ok {
-			err = fmt.Errorf("%v", r)
-		}
-		g.logger.Logf("%v\n", err.Error())
-		onError(err)
-	}
-}
-
-// HandleAndLogWithTrace does the same thing as HandleAndLog but also logs
-// (using the provided logger) a stack trace that was attached to the error.
 //
-// If Trace returns an error nothing will be logged and it will silently fail.
-// This would be the case if you are handling a non wrapped error.
-func (g *Goerr) HandleAndLogWithTrace(onError func(err error)) {
+// YMMV - It mimics the goV2 check/handle proposal: https://bit.ly/354fRXv
+func Handle(onError func(err error)) {
 	if r := recover(); r != nil {
-		var ok bool
-		err, ok := r.(error)
+		e, ok := r.(error)
 		if !ok {
-			err = fmt.Errorf("%v", r)
+			e = fmt.Errorf("%v", r)
 		}
-		g.logger.Logf("%v\n", err.Error())
-		if st, err := g.Trace(err); err == nil {
-			g.logger.Logf("%v\n", st)
-		}
-		onError(err)
+		onError(e)
 	}
 }
 
-// Errorf is just an alias to "github.com/go-errors/errors".
-func (g *Goerr) Errorf(format string, a ...interface{}) error {
-	return errors2.Errorf(format, a...)
-}
-
-// WrapPrefix is just an alias to "github.com/go-errors/errors".
-func (g *Goerr) WrapPrefix(err error, prefix string) error {
-	return errors2.WrapPrefix(err, prefix, 1)
-}
-
-// Wrap is just an alias to "github.com/go-errors/errors".
-func (g *Goerr) Wrap(err error) error {
-	return errors2.Wrap(err, 1)
-}
-
-// Unwrap takes an error value and assumes it is either a https://github.com/go-errors/errors
-// object or a https://github.com/pkg/errors object and attempts to unwrap the error returning
-// the original untouched error value.
+// Unwrap returns the result of calling the Unwrap method on err, if err's
+// type contains an Unwrap method returning error.
+// Otherwise, Unwrap returns nil.
 //
-// If the error can not be unwrapped, the second error returned will be a
-// wrapped *ErrUnwrappingNotSupported object.
-func (g *Goerr) Unwrap(err error) (error, error) {
-	if err == nil {
-		return nil, nil
-	}
-	type causer interface {
-		Cause() error
-	}
-	unwrapStdLib := func(err error) error {
-		if v := errors.Unwrap(err); v != nil {
-			return v
-		}
-		return err
-	}
-	switch v := err.(type) {
-	case causer:
-		return unwrapStdLib(v.Cause()), nil
-	case *errors2.Error:
-		unWrapped := v.Err
+// This is just a wrapper for the https://golang.org/pkg/errors/#Unwrap
+// Provided here simply for convenience so you don't have to import
+// multiple error packages.
+func Unwrap(err error) error {
+	return errors.Unwrap(err)
+}
+
+// Cause will unwrap the entire error chain until the root error is found.
+// ie: the cause.
+//
+// In the case of a *goerr.Error then the cause is considered to be an instance
+// that has it's callers set.
+//
+// If no *goerr.Error is found in the chain then this will unwrap all errors
+// regardless of type.
+func Cause(err error) error {
+	var g *Error
+	if As(err, &g) {
 		for {
-			if v, ok := unWrapped.(*errors2.Error); ok {
-				unWrapped = v
-			} else {
+			unWrapped := Unwrap(g)
+			if unWrapped == nil {
 				break
 			}
+			unWrappedCasted, ok := unWrapped.(*Error)
+			if !ok {
+				break
+			}
+			if unWrappedCasted.callers == nil {
+				break
+			}
+			g = unWrappedCasted
 		}
-		return unwrapStdLib(unWrapped), nil
+		return g
 	}
-	if e := unwrapStdLib(err); e != nil {
-		return e, nil
+
+	e := err
+	for {
+		unWrapped := Unwrap(e)
+		if unWrapped == nil {
+			break
+		}
+		e = unWrapped
 	}
-	return nil, errors2.New(&ErrUnwrappingNotSupported{
-		OriginalError: err,
-	})
+	return e
 }
 
-// MustUnwrap does the same thing as Unwrap but panics instead of returning a second error.
-func (g *Goerr) MustUnwrap(err error) error {
-	v, err := g.Unwrap(err)
-	g.Check(err)
-	return v
-}
-
-// Trace takes an error value and assumes it is either a https://github.com/go-errors/errors
-// object or a https://github.com/pkg/errors object and attempts to extract a
-// stack trace from the error value, returning it as a string.
+// Is reports whether any error in err's chain matches target.
 //
-// If the error does not appear to have stack trace attached, this will return
-// a wrapped *ErrUnwrappingNotSupported object.
-func (g *Goerr) Trace(err error) (string, error) {
-	type stackTracer interface {
-		StackTrace() errors1.StackTrace
-	}
-	type errorStacker interface {
-		ErrorStack() string
-	}
-	switch v := err.(type) {
-	case stackTracer:
-		return fmt.Sprintf("%+v\n", v.StackTrace()), nil
-	case errorStacker:
-		return v.ErrorStack(), nil
-	}
-	return "", errors2.New(&ErrStackTraceNotSupported{
-		OriginalError: err,
-	})
+// The chain consists of err itself followed by the sequence of errors obtained by
+// repeatedly calling Unwrap.
+//
+// An error is considered to match a target if it is equal to that target or if
+// it implements a method Is(error) bool such that Is(target) returns true.
+//
+// An error type might provide an Is method so it can be treated as equivalent
+// to an existing error. For example, if MyError defines
+//
+//	func (m MyError) Is(target error) bool { return target == os.ErrExist }
+//
+// then Is(MyError{}, os.ErrExist) returns true. See syscall.Errno.Is for
+// an example in the standard library.
+//
+// This is just a wrapper for the https://golang.org/pkg/errors/#Is
+// Provided here simply for convenience so you don't have to import
+// multiple error packages.
+func Is(err error, target error) bool {
+	return errors.Is(err, target)
 }
 
-// MustTrace does the same thing as Trace but panics instead of returning an error.
-func (g *Goerr) MustTrace(err error) string {
-	v, err := g.Trace(err)
-	g.Check(err)
-	return v
+// As finds the first error in err's chain that matches target, and if so, sets
+// target to that error value and returns true. Otherwise, it returns false.
+//
+// The chain consists of err itself followed by the sequence of errors obtained by
+// repeatedly calling Unwrap.
+//
+// An error matches target if the error's concrete value is assignable to the value
+// pointed to by target, or if the error has a method As(interface{}) bool such that
+// As(target) returns true. In the latter case, the As method is responsible for
+// setting target.
+//
+// An error type might provide an As method so it can be treated as if it were a
+// different error type.
+//
+// As panics if target is not a non-nil pointer to either a type that implements
+// error, or to any interface type.
+//
+// This is just a wrapper for the https://golang.org/pkg/errors/#As
+// Provided here simply for convenience so you don't have to import
+// multiple error packages.
+func As(err error, target interface{}) bool {
+	return errors.As(err, target)
 }

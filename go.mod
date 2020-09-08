@@ -1,9 +1,5 @@
-module github.com/brad-jones/goerr
+module github.com/brad-jones/goerr/v2
 
-go 1.12
+go 1.15
 
-require (
-	github.com/go-errors/errors v1.0.1
-	github.com/go-log/log v0.1.0
-	github.com/pkg/errors v0.8.1
-)
+require github.com/stretchr/testify v1.6.1

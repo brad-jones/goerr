@@ -1,23 +1,108 @@
 /*
-Package goerr attempts to bring proposed error handling in Go v2 into Go v1.
+Package goerr adds additional error handling capabilities to go.
 
-see: https://go.googlesource.com/proposal/+/master/design/go2draft.md
+Stacktrace support
 
-Preface: My ideas presented here may not necessarily be theoretically perfect
-but I am taking a pragmatic approach to my development of golang code, while at
-the same time keeping in mind that go is go and not another language... go is
-verbose suck it up and move on.
+The problem with standard go errors is that often an error will bubble all the
+way to the root of a program and then finally be output as a few lines of text
+without any context to help diagnose the problem.
+
+The classic case:
+
+	open /tmp/foo/bar.xyz: The system cannot find the file specified.
+
+You see that single line in a log file or your terminal window and unless have
+an innate understanding of your program it's difficult to determin exactly where
+the error was encountered.
+
+This package borrows (literally in some cases) from other similar packages:
+
+https://github.com/go-errors/errors
+
+https://github.com/pkg/errors
+
+Dave Cheney has a lot to say on the matter:
+
+https://dave.cheney.net/2016/04/27/dont-just-check-errors-handle-them-gracefully
+
+The difference is that this package has been built on top of the now standard
+error wrapping support that was introduced in Go v1.13.
+
+We can use Trace like this:
+
+	package main
+
+	import (
+		"github.com/brad-jones/goerr/v2"
+	)
+
+	// Simple re-useable error types can be defined like this.
+	// This is essentially the same as "errors.New()" but creates a `*goerr.Error`.
+	var errFoo = goerr.New("expecting 123456789")
+
+	func crash1(abc string) error {
+		if err := crash2(abc + "456"); err != nil {
+			// Use Trace anywhere you would normally return an error
+			// This will both store stackframe infomation and wrap the error
+			return goerr.Trace(err)
+		}
+		return nil
+	}
+
+	func crash2(abc string) error {
+		if err := crash3(abc + "7810"); err != nil {
+			return goerr.Trace(err)
+		}
+		return nil
+	}
+
+	func crash3(abc string) error {
+		if abc != "123456789" {
+			// Additional context messages can be added to the trace.
+			// These messages should be human friendly and when prefixed
+			// to the existing error message should read like a sentence.
+			return goerr.Trace(errFoo, "crash3 received "+abc)
+		}
+		return nil
+	}
+
+	func main() {
+		if err := crash1("123"); err != nil {
+			goerr.PrintTrace(err)
+		}
+	}
+
+And see output similar to:
+
+	crash3 received 1234567810: expecting 123456789
+
+	main.crash3:C:/Users/brad.jones/Projects/Personal/goerr/examples/simple/main.go:32
+			return goerr.Trace(errFoo, "crash3 received "+abc)
+	main.crash2:C:/Users/brad.jones/Projects/Personal/goerr/examples/simple/main.go:21
+			if err := crash3(abc + "7810"); err != nil {
+	main.crash1:C:/Users/brad.jones/Projects/Personal/goerr/examples/simple/main.go:12
+			if err := crash2(abc + "456"); err != nil {
+	main.main:C:/Users/brad.jones/Projects/Personal/goerr/examples/simple/main.go:38
+			if err := crash1("123"); err != nil {
+	runtime.main:C:/Users/brad.jones/scoop/apps/go/current/src/runtime/proc.go:204
+			fn()
+	runtime.goexit:C:/Users/brad.jones/scoop/apps/go/current/src/runtime/asm_amd64.s:1374
+			BYTE    $0x90   // NOP
 
 Check and Handle
+
+This is totally an experiment, YMMV :)
+
+see: https://go.googlesource.com/proposal/+/master/design/go2draft-error-handling-overview.md#draft-design
 
 We can emulate the proposed `check` and `handle` using `panic, defer & recover`.
 Take the same example from the proposal that has been refactored to use goerr.
 
-	import . "github.com/brad-jones/goerr"
+	import . "github.com/brad-jones/goerr/v2"
 
 	func CopyFile(src, dst string) (err error) {
 		defer Handle(func(e error){
-			err = fmt.Errorf("copy %s %s: %v", src, dst, e)
+			err = Trace(e, fmt.Sprintf("failed to copy %s to %s", src, dst))
 		})
 
 		r, err := os.Open(src); Check(err)
@@ -36,166 +121,27 @@ Take the same example from the proposal that has been refactored to use goerr.
 		return nil
 	}
 
-So `Check()` replaces the repetitive `if err != nil { ... }` phrase and `Handle`
-takes care of the `recover()` logic for you.
+So `Check()` replaces the repetitive `if err != nil { ... }` phrase and
+`Handle` takes care of the `recover()` logic for you. `Check()` automatically
+calls `Trace()` on your error.
 
-Idiomatic Must Functions
+Yeah I get it this looks like exceptions and if you choose to use it like that
+then thats your prerogative, I'm not going to stop you... but you probably
+shouldn't!
 
-It is idiomatic in golang for functions that might panic to be prefixed with
-`Must`. I am going to take things a step further though and suggest that life
-could be much easier if every (or most) function also had a `MustFoo()`
-equivalent.
+Panicing doesn't work across goroutines for a start and this
+https://go101.org/article/panic-and-recover-more.html
 
-Adding the extra wrapping function is minimal effort for the API developer
-(5 lines) but now gives the API consumer ultimate choice in how they want to
-deal with errors.
+I think where this can be really useful is when you say have a function like this:
 
-Another example that eliminates the `Check` logic:
-
-	import . "github.com/brad-jones/goerr"
-
-	func CopyFile(src, dst string) (err error) {
+	func DoSomeWork() (err error) {
 		defer Handle(func(e error){
-			err = fmt.Errorf("copy %s %s: %v", src, dst, e)
+			err = e
 		})
-
-		r := os.MustOpen(src);
-		defer r.MustClose()
-
-		w := os.MustCreate(dst);
-		defer Handle(func(e error){
-			w.MustClose()
-			os.MustRemove(dst)
-			panic(e) // re-panic to make above handler set the err
-		})
-
-		io.MustCopy(w, r)
-		w.MustClose()
-
-		return nil
+		Check(build("foo"))
+		Check(build("bar"))
+		Check(build("baz"))
+		Check(build("qux"))
 	}
-
-Oh No Exceptions
-
-This looks awefully like exceptions that the go designers are purposefully
-avoiding. We could go one step further with our example:
-
-	import . "github.com/brad-jones/goerr"
-
-	func MustCopyFile(src, dst string) {
-		r := os.MustOpen(src);
-		defer r.MustClose()
-
-		w := os.MustCreate(dst);
-		defer Handle(func(e error){
-			w.MustClose()
-			os.MustRemove(dst)
-			panic(e)
-		})
-
-		io.MustCopy(w, r)
-		w.MustClose()
-
-		return nil
-	}
-
-And this is where my pragmatic approach kicks in, firstly the above still
-communicates that it might panic so the consumer should be ready for such
-a possibility.
-
-It is idiomatic go to not panic across package boundaries and for the most part
-I agree with this but I am going to extend this by saying that you should not
-panic across solution boundaries.
-
-Panicking with-in a solution or application (that could be split into many
-packages) I believe is fine as you know when your going to panic and when you
-need to recover.
-
-Other Thoughts re Panicking
-
-I am sure the performance of panic, defer & recover is slower than just
-checking and returning an error value. Unless I am writing some super duper
-performance oriented thing I doubt I'll notice any impacts.
-
-Panicking across goroutines, yep I get it, it does not work.
-I am totally fine with this. There are packages like
-https://godoc.org/golang.org/x/sync/errgroup to handle such cases.
-
-Also now: https://godoc.org/github.com/brad-jones/goasync
-
-Recover doesn't always work https://go101.org/article/panic-and-recover-more.html
-This nearly made me drop this entire project but I am going to persevere and
-see how this package works out.
-
-Wrapping of Errors
-
-The other issue that will hopefully get solved in go v2 is the ability to
-provide context to errors as they get passed through the stack. For now we
-have solutions such as:
-
-https://godoc.org/github.com/pkg/errors
-
-https://godoc.org/github.com/go-errors/errors
-
-This package provides some helpful functions to iron some of the differences
-between these error wrappers (I started using pkg/errors but now prefer
-go-errors/errors).
-
-	import "github.com/go-errors/errors"
-	import . "github.com/brad-jones/goerr"
-
-	type anError struct {
-		message string
-	}
-
-	func (e *anError) Error() string {
-		return e.message
-	}
-
-	func foo() error {
-		return errors.New(&anError{
-			message: "an error happened",
-		})
-	}
-
-	func bar() error {
-		return errors.WrapPrefix(foo(), "some extra context", 0)
-	}
-
-	func main() {
-		defer Handle(func(e error){
-			switch err := MustUnwrap(e).(type) {
-			case *anError:
-				fmt.Println(err.message)
-			default:
-				fmt.Println(MustTrace(e))
-			}
-		})
-		Check(bar())
-	}
-
-Helper Functions vs New Instance
-
-You can use goerr via 2 different APIs, all the examples to date have been using
-the simple helper functions but all these do is call the instance methods of a
-`goerr.Goerr` object.
-
-If you need to set your own logger (and maybe other things in the future) this
-is how you would do it.
-
-	import logger "github.com/go-log/log/fmt"
-	import "github.com/brad-jones/goerr"
-
-	func main() {
-		l := logger.New()
-		g := goerr.New(l)
-		defer g.HandleAndLog(func(e error){ })
-	}
-
-see: https://github.com/go-log/log
-
-NOTE: We have also been using a "dot" import this is not necessarily suggested
-either, if your not familiar with this read up here -
-https://scene-si.org/2018/01/25/go-tips-and-tricks-almost-everything-about-imports/
 */
 package goerr
