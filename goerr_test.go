@@ -74,7 +74,7 @@ func TestCheckHandle(t *testing.T) {
 				"crash1 failed because: we couldn't open the file: open /tmp/not-found/a9e5b8c7-13f6-4acc-a0c8-978319cb738b: no such file or directory",
 				"",
 				"{",
-				"    \"Err\": 3,",
+				"    \"Err\": 2,",
 				"    \"Op\": \"open\",",
 				"    \"Path\": \"/tmp/not-found/a9e5b8c7-13f6-4acc-a0c8-978319cb738b\"",
 				"}",
@@ -102,18 +102,15 @@ func normaliseCmdOutput(in []byte) []string {
 		panic(err)
 	}
 	cwd = strings.ReplaceAll(cwd, "\\", "/")
-	return strings.Split(
-		strings.ReplaceAll(
-			strings.ReplaceAll(
-				string(in),
-				root,
-				"",
-			),
-			cwd,
-			"",
-		),
-		"\n",
-	)
+
+	out := string(in)
+	out = strings.ReplaceAll(out, "\r\n", "\n")
+	out = strings.ReplaceAll(out, root, "")
+	out = strings.ReplaceAll(out, cwd, "")
+	out = strings.ReplaceAll(out, "    \"Err\": 3,", "    \"Err\": 2,")
+	out = strings.ReplaceAll(out, "The system cannot find the path specified.", "no such file or directory")
+
+	return strings.Split(out, "\n")
 }
 
 func TestUnwrap(t *testing.T) {
