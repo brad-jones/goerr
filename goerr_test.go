@@ -71,7 +71,7 @@ func TestCheckHandle(t *testing.T) {
 	if assert.NoError(t, err) {
 		assert.Equal(t,
 			[]string{
-				"crash1 failed because: we couldn't open the file: open /tmp/not-found/a9e5b8c7-13f6-4acc-a0c8-978319cb738b: The system cannot find the path specified.",
+				"crash1 failed because: we couldn't open the file: open /tmp/not-found/a9e5b8c7-13f6-4acc-a0c8-978319cb738b: no such file or directory",
 				"",
 				"{",
 				"    \"Err\": 3,",
