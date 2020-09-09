@@ -11,6 +11,8 @@
 
 Package goerr adds additional error handling capabilities to go.
 
+_Looking for v1, see the [master branch](https://github.com/brad-jones/goerr/tree/master)_
+
 ## Quick Start
 
 `go get -u github.com/brad-jones/goerr/v2`
