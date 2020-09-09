@@ -16,9 +16,7 @@ jobs:
     needs: init
     runs-on: ubuntu-latest
     container:
-      image: golang:1.15.1-alpine3.12
-    env:
-      CGO_ENABLED: 0
+      image: golang:1.15.1
     steps:
       - uses: actions/checkout@v2
       - uses: actions/cache@v2
