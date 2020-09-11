@@ -21,13 +21,6 @@ func TestCause(t *testing.T) {
 	assert.Equal(t, e1, goerr.Cause(e3))
 }
 
-func TestCauseGoErr(t *testing.T) {
-	e1 := goerr.New("abc")
-	e2 := goerr.Wrap(e1)
-	e3 := goerr.Wrap(e2)
-	assert.Equal(t, goerr.Unwrap(e2), goerr.Cause(e3))
-}
-
 func TestIs(t *testing.T) {
 	e1 := goerr.New("abc")
 	e2 := goerr.Wrap(e1)

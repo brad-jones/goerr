@@ -23,9 +23,9 @@ func TestStackTraceNewFromGoErr(t *testing.T) {
 	traced := goerr.Wrap(err)
 	st := goerr.NewStackTrace(traced)
 	assert.Equal(t, traced, st.Error)
-	assert.Equal(t, goerr.Unwrap(traced), st.Cause)
+	assert.Equal(t, err.Unwrap(), st.Cause)
 	assert.Equal(t, "abc", st.ErrorMsg)
-	assert.Equal(t, 3, len(st.Stack))
+	assert.Equal(t, 1, len(st.Stack))
 	assert.Nil(t, st.ErrorCtx)
 }
 

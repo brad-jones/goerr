@@ -17,6 +17,8 @@ the error was encountered.
 
 This package borrows (literally in some cases) from other similar packages:
 
+https://github.com/palantir/stacktrace
+
 https://github.com/go-errors/errors
 
 https://github.com/pkg/errors
@@ -28,7 +30,7 @@ https://dave.cheney.net/2016/04/27/dont-just-check-errors-handle-them-gracefully
 The difference is that this package has been built on top of the now standard
 error wrapping support that was introduced in Go v1.13.
 
-We can use Trace like this:
+We can use Wrap like this:
 
 	package main
 
@@ -42,16 +44,16 @@ We can use Trace like this:
 
 	func crash1(abc string) error {
 		if err := crash2(abc + "456"); err != nil {
-			// Use Trace anywhere you would normally return an error
+			// Use Wrap anywhere you would normally return an error
 			// This will both store stackframe information and wrap the error
-			return goerr.Trace(err)
+			return goerr.Wrap(err)
 		}
 		return nil
 	}
 
 	func crash2(abc string) error {
 		if err := crash3(abc + "7810"); err != nil {
-			return goerr.Trace(err)
+			return goerr.Wrap(err)
 		}
 		return nil
 	}
@@ -61,7 +63,7 @@ We can use Trace like this:
 			// Additional context messages can be added to the trace.
 			// These messages should be human friendly and when prefixed
 			// to the existing error message should read like a sentence.
-			return goerr.Trace(errFoo, "crash3 received "+abc)
+			return goerr.Wrap(errFoo, "crash3 received "+abc)
 		}
 		return nil
 	}
@@ -77,17 +79,21 @@ And see output similar to:
 	crash3 received 1234567810: expecting 123456789
 
 	main.crash3:C:/Users/brad.jones/Projects/Personal/goerr/examples/simple/main.go:32
-			return goerr.Trace(errFoo, "crash3 received "+abc)
-	main.crash2:C:/Users/brad.jones/Projects/Personal/goerr/examples/simple/main.go:21
-			if err := crash3(abc + "7810"); err != nil {
-	main.crash1:C:/Users/brad.jones/Projects/Personal/goerr/examples/simple/main.go:12
-			if err := crash2(abc + "456"); err != nil {
-	main.main:C:/Users/brad.jones/Projects/Personal/goerr/examples/simple/main.go:38
-			if err := crash1("123"); err != nil {
-	runtime.main:C:/Users/brad.jones/scoop/apps/go/current/src/runtime/proc.go:204
-			fn()
-	runtime.goexit:C:/Users/brad.jones/scoop/apps/go/current/src/runtime/asm_amd64.s:1374
-			BYTE    $0x90   // NOP
+		return goerr.Wrap(errFoo, "crash3 received "+abc)
+	main.crash2:C:/Users/brad.jones/Projects/Personal/goerr/examples/simple/main.go:22
+		return goerr.Wrap(err)
+	main.crash1:C:/Users/brad.jones/Projects/Personal/goerr/examples/simple/main.go:15
+		return goerr.Wrap(err)
+
+Intent
+
+To borrow from "palantir/stacktrace" the intent is not that we capture the exact
+state of the stack when an error happens, including every function call. For a
+library that does that, see github.com/go-errors/errors.
+
+The intent here is to attach relevant contextual information (messages, variables)
+at strategic places along the call stack, keeping stack traces compact and
+maximally useful.
 
 Check and Handle
 
@@ -102,7 +108,7 @@ Take the same example from the proposal that has been refactored to use goerr.
 
 	func CopyFile(src, dst string) (err error) {
 		defer Handle(func(e error){
-			err = Trace(e, fmt.Sprintf("failed to copy %s to %s", src, dst))
+			err = Wrap(e, fmt.Sprintf("failed to copy %s to %s", src, dst))
 		})
 
 		r, err := os.Open(src); Check(err)
@@ -112,7 +118,7 @@ Take the same example from the proposal that has been refactored to use goerr.
 		defer Handle(func(e error){
 			w.Close()
 			os.Remove(dst)
-			panic(e) // re-panic to make above handler set the err
+			Check(e) // re-panic to make above handler set the err
 		})
 
 		_, err = io.Copy(w, r); Check(err)
@@ -131,6 +137,9 @@ shouldn't!
 
 Panicing doesn't work across goroutines for a start and this
 https://go101.org/article/panic-and-recover-more.html
+
+Although there is https://github.com/brad-jones/goasync which makes use of this
+package to handle errors across goroutines (including panics), reasonable well.
 
 I think where this can be really useful is when you say have a function like this:
 

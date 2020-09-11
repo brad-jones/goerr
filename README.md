@@ -25,21 +25,21 @@ import (
 )
 
 // Simple re-useable error types can be defined like this.
-// This is essentiually the same as "errors.New()" but creates a `*goerr.Error`.
+// This is essentially the same as "errors.New()" but creates a `*goerr.Error`.
 var errFoo = goerr.New("expecting 123456789")
 
 func crash1(abc string) error {
 	if err := crash2(abc + "456"); err != nil {
-		// Use Trace anywhere you would normally return an error
+		// Use Wrap anywhere you would normally return an error
 		// This will both store stackframe information and wrap the error
-		return goerr.Trace(err)
+		return goerr.Wrap(err)
 	}
 	return nil
 }
 
 func crash2(abc string) error {
 	if err := crash3(abc + "7810"); err != nil {
-		return goerr.Trace(err)
+		return goerr.Wrap(err)
 	}
 	return nil
 }
@@ -49,7 +49,7 @@ func crash3(abc string) error {
 		// Additional context messages can be added to the trace.
 		// These messages should be human friendly and when prefixed
 		// to the existing error message should read like a sentence.
-		return goerr.Trace(errFoo, "crash3 received "+abc)
+		return goerr.Wrap(errFoo, "crash3 received "+abc)
 	}
 	return nil
 }
@@ -67,17 +67,11 @@ Running the above will output something similar to:
 crash3 received 1234567810: expecting 123456789
 
 main.crash3:C:/Users/brad.jones/Projects/Personal/goerr/examples/simple/main.go:32
-	return goerr.Trace(errFoo, "crash3 received "+abc)
-main.crash2:C:/Users/brad.jones/Projects/Personal/goerr/examples/simple/main.go:21
-	if err := crash3(abc + "7810"); err != nil {
-main.crash1:C:/Users/brad.jones/Projects/Personal/goerr/examples/simple/main.go:12
-	if err := crash2(abc + "456"); err != nil {
-main.main:C:/Users/brad.jones/Projects/Personal/goerr/examples/simple/main.go:38
-	if err := crash1("123"); err != nil {
-runtime.main:C:/Users/brad.jones/scoop/apps/go/current/src/runtime/proc.go:204
-	fn()
-runtime.goexit:C:/Users/brad.jones/scoop/apps/go/current/src/runtime/asm_amd64.s:1374
-	BYTE    $0x90   // NOP
+    return goerr.Wrap(errFoo, "crash3 received "+abc)
+main.crash2:C:/Users/brad.jones/Projects/Personal/goerr/examples/simple/main.go:22
+    return goerr.Wrap(err)
+main.crash1:C:/Users/brad.jones/Projects/Personal/goerr/examples/simple/main.go:15
+    return goerr.Wrap(err)
 ```
 
 _Also see further working examples under: <https://github.com/brad-jones/goerr/tree/v2/examples>_

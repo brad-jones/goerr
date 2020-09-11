@@ -47,15 +47,17 @@ func NewStackTrace(err error) *StackTrace {
 		}
 	}
 
-	// Reverse the frames so we create a call stack in the expected manner.
-	// ie: from the error cause to the root of the program
-	// https://github.com/golang/go/wiki/SliceTricks#reversing
-	for i := len(frames)/2 - 1; i >= 0; i-- {
-		opp := len(frames) - 1 - i
-		frames[i], frames[opp] = frames[opp], frames[i]
+	if len(frames) > 0 {
+		// Reverse the frames so we create a call stack in the expected manner.
+		// ie: from the error cause to the root of the program
+		// https://github.com/golang/go/wiki/SliceTricks#reversing
+		for i := len(frames)/2 - 1; i >= 0; i-- {
+			opp := len(frames) - 1 - i
+			frames[i], frames[opp] = frames[opp], frames[i]
+		}
+		st.Stack = frames
 	}
 
-	st.Stack = frames
 	return st
 }
 
@@ -104,10 +106,11 @@ func marshalError(err error) map[string]interface{} {
 		jS := string(j)
 		if strings.HasPrefix(jS, "{") && jS != "{}" {
 			var out map[string]interface{}
-			json.Unmarshal(j, &out)
+			if err := json.Unmarshal(j, &out); err != nil {
+				return nil
+			}
 			return out
 		}
 	}
-
 	return nil
 }
