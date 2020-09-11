@@ -20,7 +20,7 @@ func TestStackTraceNewFromError(t *testing.T) {
 
 func TestStackTraceNewFromGoErr(t *testing.T) {
 	err := goerr.New("abc")
-	traced := goerr.Trace(err)
+	traced := goerr.Wrap(err)
 	st := goerr.NewStackTrace(traced)
 	assert.Equal(t, traced, st.Error)
 	assert.Equal(t, goerr.Unwrap(traced), st.Cause)
@@ -38,7 +38,7 @@ func (f *fooError) Error() string {
 }
 
 func TestStackTraceWithCtx(t *testing.T) {
-	err := goerr.Trace(&fooError{Bar: "abc"})
+	err := goerr.Wrap(&fooError{Bar: "abc"})
 	st := goerr.NewStackTrace(err)
 	assert.Equal(t, map[string]interface{}{
 		"Bar": "abc",

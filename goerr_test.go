@@ -23,21 +23,21 @@ func TestCause(t *testing.T) {
 
 func TestCauseGoErr(t *testing.T) {
 	e1 := goerr.New("abc")
-	e2 := goerr.Trace(e1)
-	e3 := goerr.Trace(e2)
+	e2 := goerr.Wrap(e1)
+	e3 := goerr.Wrap(e2)
 	assert.Equal(t, goerr.Unwrap(e2), goerr.Cause(e3))
 }
 
 func TestIs(t *testing.T) {
 	e1 := goerr.New("abc")
-	e2 := goerr.Trace(e1)
-	e3 := goerr.Trace(e2)
+	e2 := goerr.Wrap(e1)
+	e3 := goerr.Wrap(e2)
 	assert.Equal(t, true, goerr.Is(e3, e1))
 }
 
 func TestAs(t *testing.T) {
 	e1 := goerr.New("abc")
-	e2 := goerr.Trace(e1)
+	e2 := goerr.Wrap(e1)
 	e3 := fmt.Errorf("%w", e2)
 	var err *goerr.Error
 	result := goerr.As(e3, &err)

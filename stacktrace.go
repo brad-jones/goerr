@@ -2,6 +2,7 @@ package goerr
 
 import (
 	"encoding/json"
+	"strings"
 )
 
 // StackTrace is an object that represents a stack trace for a given error,
@@ -22,11 +23,39 @@ func NewStackTrace(err error) *StackTrace {
 		ErrorMsg: err.Error(),
 	}
 
-	if cause, ok := st.Cause.(*Error); ok {
-		st.Stack = cause.Frames()
-		st.ErrorCtx = marshalError(cause.Unwrap())
+	// Assign any additional context values
+	st.ErrorCtx = marshalError(st.Cause)
+
+	// Grab all the frames from each error in the error chain
+	frames := []*StackFrame{}
+	var e *Error
+	if As(err, &e) {
+		for {
+			frames = append(frames, e.Frame())
+			unWrapped := Unwrap(e)
+			if unWrapped == nil {
+				break
+			}
+			unWrappedCasted, ok := unWrapped.(*Error)
+			if !ok {
+				break
+			}
+			if unWrappedCasted.caller == 0 {
+				break
+			}
+			e = unWrappedCasted
+		}
 	}
 
+	// Reverse the frames so we create a call stack in the expected manner.
+	// ie: from the error cause to the root of the program
+	// https://github.com/golang/go/wiki/SliceTricks#reversing
+	for i := len(frames)/2 - 1; i >= 0; i-- {
+		opp := len(frames) - 1 - i
+		frames[i], frames[opp] = frames[opp], frames[i]
+	}
+
+	st.Stack = frames
 	return st
 }
 
@@ -73,12 +102,9 @@ func (s *StackTrace) MarshalJSON() ([]byte, error) {
 func marshalError(err error) map[string]interface{} {
 	if j, jerr := json.Marshal(err); jerr == nil {
 		jS := string(j)
-		if jS != "" && jS != "{}" && jS != "[]" && jS != "null" {
+		if strings.HasPrefix(jS, "{") && jS != "{}" {
 			var out map[string]interface{}
-			err := json.Unmarshal(j, &out)
-			if err != nil {
-				panic(err)
-			}
+			json.Unmarshal(j, &out)
 			return out
 		}
 	}

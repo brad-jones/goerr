@@ -9,7 +9,7 @@ import (
 type Error struct {
 	message  string
 	innerErr error
-	callers  []uintptr
+	caller   uintptr
 }
 
 // New is the constructor for the `Error` object.
@@ -38,11 +38,7 @@ func (g *Error) Unwrap() error {
 	return g.innerErr
 }
 
-// Frames returns a slice of stack frame objects attached to this error.
-func (g *Error) Frames() []*StackFrame {
-	frames := []*StackFrame{}
-	for _, pc := range g.callers {
-		frames = append(frames, NewStackFrame(pc))
-	}
-	return frames
+// Frame returns the stack frame object attached to this error.
+func (g *Error) Frame() *StackFrame {
+	return NewStackFrame(g.caller)
 }

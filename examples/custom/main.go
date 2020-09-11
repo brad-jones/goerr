@@ -16,7 +16,7 @@ func (h *httpError) Error() string {
 }
 
 func crash1() error {
-	return goerr.Trace(&httpError{StatusCode: 500})
+	return goerr.Wrap(&httpError{StatusCode: 500})
 }
 
 func main() {

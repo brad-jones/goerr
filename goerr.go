@@ -33,67 +33,27 @@ func PrintTrace(err error) {
 // It also accepts a variadic number of messages that will be
 // prefixed to the error text it's self to provide additional
 // context if required. These messages should be human friendly.
-func Trace(value interface{}, messages ...string) *Error {
-	return trace(1, value, messages...)
-}
-
-func trace(skip int, value interface{}, messages ...string) *Error {
+func Trace(skip int, value interface{}, messages ...string) *Error {
 	err, ok := value.(*Error)
 	if !ok {
 		err = New(value)
-	} else {
-		if err.callers == nil {
-			err = &Error{innerErr: err}
-		}
 	}
 
-	caller := skip + 1
-	callers := []uintptr{}
-	for {
-		pc, _, _, ok := runtime.Caller(caller)
-		if !ok {
-			break
-		}
-		callers = append(callers, pc)
-		caller++
-	}
-
-	if err.callers == nil {
-		err.callers = callers
+	pc, _, _, ok := runtime.Caller(skip + 1)
+	if !ok {
+		panic("goerr failed to trace runtime.Caller(skip + 1)")
 	}
 
 	return &Error{
 		innerErr: err,
-		callers:  callers[1:],
+		caller:   pc,
 		message:  strings.Join(messages, ": "),
 	}
 }
 
-// Check will panic if err is not nill.
-// It does the same tracing as the Trace function.
-//
-// YMMV - It mimics the goV2 check/handle proposal: https://bit.ly/354fRXv
-func Check(err error, messages ...string) {
-	if err != nil {
-		panic(trace(1, err, messages...))
-	}
-}
-
-// Handle will recover, cast the result into an error
-// and then call the provided onError handler.
-//
-// Goes without saying but for this to be useful
-// you must preface it with `defer`.
-//
-// YMMV - It mimics the goV2 check/handle proposal: https://bit.ly/354fRXv
-func Handle(onError func(err error)) {
-	if r := recover(); r != nil {
-		e, ok := r.(error)
-		if !ok {
-			e = fmt.Errorf("%v", r)
-		}
-		onError(e)
-	}
+// Wrap is simply a shortcut for Trace(0, err, "some message")
+func Wrap(value interface{}, messages ...string) *Error {
+	return Trace(1, value, messages...)
 }
 
 // Unwrap returns the result of calling the Unwrap method on err, if err's
@@ -109,32 +69,7 @@ func Unwrap(err error) error {
 
 // Cause will unwrap the entire error chain until the root error is found.
 // ie: the cause.
-//
-// In the case of a *goerr.Error then the cause is considered to be an instance
-// that has it's callers set.
-//
-// If no *goerr.Error is found in the chain then this will unwrap all errors
-// regardless of type.
 func Cause(err error) error {
-	var g *Error
-	if As(err, &g) {
-		for {
-			unWrapped := Unwrap(g)
-			if unWrapped == nil {
-				break
-			}
-			unWrappedCasted, ok := unWrapped.(*Error)
-			if !ok {
-				break
-			}
-			if unWrappedCasted.callers == nil {
-				break
-			}
-			g = unWrappedCasted
-		}
-		return g
-	}
-
 	e := err
 	for {
 		unWrapped := Unwrap(e)
@@ -191,4 +126,31 @@ func Is(err error, target error) bool {
 // multiple error packages.
 func As(err error, target interface{}) bool {
 	return errors.As(err, target)
+}
+
+// Check will panic if err is not nill.
+// It does the same tracing as the Trace function.
+//
+// YMMV - It mimics the goV2 check/handle proposal: https://bit.ly/354fRXv
+func Check(err error, messages ...string) {
+	if err != nil {
+		panic(Trace(1, err, messages...))
+	}
+}
+
+// Handle will recover, cast the result into an error
+// and then call the provided onError handler.
+//
+// Goes without saying but for this to be useful
+// you must preface it with `defer`.
+//
+// YMMV - It mimics the goV2 check/handle proposal: https://bit.ly/354fRXv
+func Handle(onError func(err error)) {
+	if r := recover(); r != nil {
+		e, ok := r.(error)
+		if !ok {
+			e = fmt.Errorf("%v", r)
+		}
+		onError(Trace(4, e))
+	}
 }
