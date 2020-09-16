@@ -7,9 +7,6 @@ import (
 )
 
 func main() {
-	// This library also has experimental support for the go v2 check/handle
-	// proposal <https://bit.ly/354fRXv> through a set of functions that mimic
-	// the proposal by using panic & recover, YMMV...
 	if err := crash1(); err != nil {
 		goerr.PrintTrace(err)
 	}
