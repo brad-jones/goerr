@@ -17,9 +17,9 @@ func TestCheckHandle(t *testing.T) {
 			[]string{
 				"we couldn't open the file: open /tmp/not-found/a9e5b8c7-13f6-4acc-a0c8-978319cb738b: no such file or directory",
 				"",
-				"main.crash1:/main.go:21",
+				"main.crash1:/main.go:18",
 				"\tgoerr.Check(err, \"we couldn't open the file\")",
-				"main.main:/main.go:13",
+				"main.main:/main.go:10",
 				"\tif err := crash1(); err != nil {",
 				"",
 				"",

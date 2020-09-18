@@ -17,11 +17,9 @@ func TestCustom(t *testing.T) {
 			[]string{
 				"http request failed",
 				"",
-				"{",
-				"    \"StatusCode\": 500",
-				"}",
+				"{", "    \"StatusCode\": 500", "}",
 				"",
-				"main.crash1:/main.go:19",
+				"main.crash1:/main.go:16",
 				"\treturn goerr.Wrap(&httpError{StatusCode: 500})",
 				"",
 				"",
