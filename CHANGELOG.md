@@ -1,3 +1,10 @@
+## [2.1.1](https://github.com/brad-jones/goerr/compare/v2.1.0...v2.1.1) (2020-09-18)
+
+
+### Bug Fixes
+
+* **npm): (deps:** bump lint-staged from 10.3.0 to 10.4.0 ([9950888](https://github.com/brad-jones/goerr/commit/9950888231eee22e3f88bd35167b03c4f805c74c))
+
 # [2.1.0](https://github.com/brad-jones/goerr/compare/v2.0.0...v2.1.0) (2020-09-11)
 
 
