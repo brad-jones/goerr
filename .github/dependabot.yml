@@ -6,19 +6,19 @@ updates:
     schedule:
       interval: "daily"
     commit-message:
-      prefix: "fix(actions): "
+      prefix: "ci"
       include: "scope"
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
       interval: "daily"
     commit-message:
-      prefix: "fix(go): "
+      prefix: "fix"
       include: "scope"
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "daily"
     commit-message:
-      prefix: "fix(npm): "
+      prefix: "build"
       include: "scope"
