@@ -1,3 +1,10 @@
+## [2.1.2](https://github.com/brad-jones/goerr/compare/v2.1.1...v2.1.2) (2021-03-11)
+
+
+### Bug Fixes
+
+* **deps:** bump github.com/stretchr/testify from 1.6.1 to 1.7.0 ([#24](https://github.com/brad-jones/goerr/issues/24)) ([df6398e](https://github.com/brad-jones/goerr/commit/df6398e644d68858256a65f79f8b91f34f4a6753))
+
 ## [2.1.1](https://github.com/brad-jones/goerr/compare/v2.1.0...v2.1.1) (2020-09-18)
 
 
