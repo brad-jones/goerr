@@ -1,3 +1,10 @@
+## [2.1.3](https://github.com/brad-jones/goerr/compare/v2.1.2...v2.1.3) (2021-03-11)
+
+
+### Bug Fixes
+
+* bump go version from 1.15.1 to 1.16.1 ([9b2783b](https://github.com/brad-jones/goerr/commit/9b2783bae54faed1becdfff9fdb425dc083c32eb))
+
 ## [2.1.2](https://github.com/brad-jones/goerr/compare/v2.1.1...v2.1.2) (2021-03-11)
 
 
