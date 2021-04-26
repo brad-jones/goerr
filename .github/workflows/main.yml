@@ -47,7 +47,7 @@ jobs:
       - run: go test -v ./...
 
   release:
-    if: "!contains(github.event_name, 'pull_request') && github.ref == 'refs/heads/v2"
+    if: "!contains(github.event_name, 'pull_request') && github.ref == 'refs/heads/v2'"
     needs: test
     runs-on: ubuntu-latest
     env:
